@@ -178,6 +178,19 @@ def list(_token, _path, _stat, _permissions, _metadata, _offset, _limit):
 
     return body
 
+def meta(_token, _cmds):
+    buffer = StringIO()
+    c = pycurl.Curl()
+    c.setopt(pycurl.HTTPHEADER,['Authorization: '+  _token])
+    c.setopt(c.CUSTOMREQUEST, 'POST')
+    url = base_url()+f"meta?cmds={_cmds}"
+    c.setopt(c.URL, url)
+    c.setopt(c.WRITEDATA, buffer)
+    c.perform()
+    c.close()
+    body = buffer.getvalue()
+    return body
+
 def put(_token, _physical_path, _logical_path, _ticket_id=None):
     body = ""
     offset = 0

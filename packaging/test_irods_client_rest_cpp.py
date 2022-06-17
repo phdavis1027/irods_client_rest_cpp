@@ -30,6 +30,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         token = irods_rest.authenticate('rods', 'rods', 'native')
         assert(token.find('827000') == -1)
 
+
     def test_access_with_default_arguments(self):
         with session.make_session_for_existing_admin() as admin:
             try:
@@ -243,6 +244,83 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         # clean up /etc/irods
         os.remove(file1)
         os.remove(file2)
+
+    def test_meta(self):
+        users = [ 'user' + i for i in range(5) ]
+        collections = [ 'coll' + i for i in range(5) ]
+        dobjects = [ 'do' + i for i in range(5) ]
+        resources = [ 'resc' + i for i in range(5) ]
+
+        with session.make_session_for_existing_admin() as admin:
+            token = irods_rest.authenticate('rods', 'rods', 'native')
+            for user in users:
+                admin.assert_icommand(['iadmin', 'mkuser', "{}#tempZone".format(user)])
+                cmds = construct_meta_ops_for_target(user, "user")
+                res = irods_rest.meta(token, cmds)
+                assert(
+                    json.loads(res)["op_status"] == "SUCCESS"
+                )
+
+            # create 5 collections
+            for coll in collections:
+                admin.assert_icommand(['imkdir', coll])
+                cmds = self.construct_meta_ops_for_target("/tempZone/home/rods/{}".format(coll), "collection")
+                res = irods_rest.meta(token, cmds)
+                assert(
+                    json.loads(res)["op_status"] == "SUCCESS"
+                )
+
+            # create 5 do's within those collections
+            for coll in collections:
+                admin.assert_icommand(['icd', "/tempZone/home/rods/{}".format(coll)])
+                for do in dobjects:
+                    admin.assert_icommand(['itouch', do])
+                    path = "/tempZone/home/rods/{}/{}".format(coll, do)
+                    cmds = self.construct_meta_ops_for_target(path, "data_object")
+                    res = irods_rest.meta(token, cmds)
+                    assert(
+                        json.loads(res)["op_status"] == "SUCCESS"
+                    )
+
+
+
+            # create 5 resources
+            for resc in resources:
+                admin.assert_icommand(['iadmin', 'mkresc', resc, 'unixfilesystem', "localhost:/var/lib/storageVault{}".format(resc[-1])])
+                cmds = self.construct_meta_ops_for_target(resc, "resource")
+                res = irods_rest.meta(token, cmds)
+                assert(
+                    json.loads(res)["op_status"] == "SUCCESS"
+                )
+
+
+    def construct_meta_ops_for_target(self, _target, _entity_type):
+        ops = {
+            "entity_name" : _target,
+            "entity_type" : _entity_type,
+            "operations"  : [
+                {
+                    "operation" : "add",
+                    "attribute" : "{}attrib{}".format(_entity_type, _target[:-1]),
+                    "value" : "{}value{}".format(_entity_type, _target[:-1]),
+                    "units" : "{}units{}".format(_entity_type, _target[:-1])
+                },
+                {
+                    "operation" : "set",
+                    "attribute" : "{}attrib{}s".format(_entity_type, _target[:-1]),
+                    "value" : "{}value{}s".format(_entity_type, _target[:-1]),
+                    "units" : "{}units{}s".format(_entity_type, _target[:-1])
+                },
+                {
+                    "operation" : "remove",
+                    "attribute" : "{}attrib{}s".format(_entity_type, _target[:-1]),
+                    "value" : "{}value{}s".format(_entity_type, _target[:-1]),
+                    "units" : "{}units{}s".format(_entity_type, _target[:-1])
+                }
+            ]
+        }
+        return ops
+
 
     def test_list(self):
         with session.make_session_for_existing_admin() as admin:
@@ -529,3 +607,10 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         self.user.assert_icommand(['iinit', old_password])
         self.user.assert_icommand(['ils', '-ld'], 'STDOUT', [self.user.session_collection])
 
+def main():
+    rest = TestClientRest()
+    res = rest.construct_meta_ops_for_target("do", "data_object")
+    print(res)
+
+if __name__ == "__main__":
+    main()
