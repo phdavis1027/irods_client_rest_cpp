@@ -294,6 +294,27 @@ curl -X PUT -H "Authorization: ${TOKEN}" "http://localhost/irods-rest/0.9.1/put_
 **Returns**
 Nothing on success
 
+### /metadata
+This endpoint allows adding, setting, or removing metadata AVUs.
+
+**Method**: POST
+
+**Parameters**
+cmds: A JSON-object encoding a single target, its entity type, and a list of operations to perform on it.
+
+**Example CURL Command:**
+```
+export CMDS="{"operations": [{"units": "data_object_units_do", "attribute": "data_object_attrib_do",\
+"operation": "add", "value": "data_object_value_do"}, {"units": "data_object_units_do_s", "attribute":\
+"data_object_attrib_do_s", "operation": "set", "value": "data_object_value_do_s"}, {"units":\
+"data_object_units_do_s", "attribute": "data_object_attrib_do_s", "operation": "remove", "value":\
+"data_object_value_do_s"}], "entity_name": "do1", "entity_type": "data_object"}"
+curl -X POST -H "Authorization: ${TOKEN}" "http://localhost/irods-rest/0.9.1/metadata?cmds=${CMDS}"
+```
+
+**Returns**
+Nothing on success
+
 ### /query
 This endpoint provides access to the iRODS General Query language, which is a generic query service for the iRODS catalog.
 

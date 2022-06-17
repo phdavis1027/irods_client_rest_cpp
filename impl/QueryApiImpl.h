@@ -55,4 +55,3 @@ namespace io::swagger::server::api
 } // namespace io::swagger::server::api
 
 #endif // QUERY_API_IMPL_H_
-

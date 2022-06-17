@@ -63,6 +63,11 @@ namespace irods::rest
 
         _response.send(http_code, msg);
     } // handle_request
+
+    inline bool http_bool(const std::string& s) noexcept {
+        return s == "1" || s == "true";
+    }
+
 } // namespace irods::rest
 
 #endif // IRODS_REST_CPP_UTILS_HPP

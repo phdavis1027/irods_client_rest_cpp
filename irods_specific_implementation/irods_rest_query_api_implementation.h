@@ -164,4 +164,3 @@ namespace irods::rest
 } // namespace irods::rest
 
 #endif // IRODS_REST_CPP_QUERY_API_IMPLEMENTATION_H
-
