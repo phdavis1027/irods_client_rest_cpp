@@ -11,6 +11,7 @@
 
 namespace irods::rest
 {
+
     class admin;
 
     auto hide_sensitive_data(const Pistache::Http::Uri::Query& _query,
@@ -25,7 +26,7 @@ namespace irods::rest
         auto safe_query = _query;
         safe_query.clear();
 
-        // Build a new query string, but hide the password value (i.e. arg4) 
+        // Build a new query string, but hide the password value (i.e. arg4)
         // with a different value.
         std::for_each(_query.parameters_begin(), _query.parameters_end(),
             [&safe_query](const auto& _e) {

@@ -132,6 +132,11 @@ namespace irods::rest
             load_client_api_plugins();
         } // ctor
 
+        bool to_bool(const std::string& s) noexcept
+        {
+            return s == "1" || s == "true";
+        }
+
         virtual ~api_base()
         {
         } // dtor
@@ -334,7 +339,7 @@ namespace irods::rest
                 if (_cfg.contains(configuration_keywords::log_level)) {
                     const auto lvl = _cfg.at(configuration_keywords::log_level).get<std::string>();
                     auto lvl_enum = spdlog::level::info;
-                    
+
                     // clang-format off
                     if      (lvl == "critical") { lvl_enum = spdlog::level::critical; }
                     else if (lvl == "error")    { lvl_enum = spdlog::level::err; }

@@ -73,4 +73,3 @@ void PutConfigurationApi::default_handler(const Pistache::Rest::Request& request
 }
 }
 }
-

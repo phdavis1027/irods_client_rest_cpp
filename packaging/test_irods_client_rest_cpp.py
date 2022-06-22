@@ -68,6 +68,57 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             finally:
                 os.remove(file_name)
                 admin.assert_icommand(['irm', '-f', file_name])
+    def test_logical_path_rename(self):
+        base_path = '/tempZone/home/rods'
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        with session.make_session_for_existing_admin() as admin:
+            files = [ 'files' + i for i in range(5) ]
+            colls = [ 'coll' + i for i in range(5) ]
+            for file in files:
+                admin.assert_icommand(['itouch', file])
+                src = base_path + '/' + file
+                dst = base_path + '/' + files + '_new'
+                res = irods_rest.lp_rename(
+                    _token = token
+                    _src = src,
+                    _dst = dst
+                )
+                assert(res == "")
+            for coll in colls:
+                admin.assert_icommand(['imkdir', coll])
+                src = base_path + '/' + coll
+                dst = base_path + '/' + coll + '_new'
+                res = irods_rest.lp_rename(
+                    _token = token
+                    _src = src,
+                    _dst = dst
+                )
+                assert(res == "")
+
+    def test_logical_path_delete(self):
+        base_path = '/tempZone/home/rods'
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        with session.make_session_for_existing_admin() as admin:
+            files = [ 'files' + i for i in range(5) ]
+            colls = [ 'coll' + i for i in range(5) ]
+            for file in files:
+                admin.assert_icommand(['itouch', file])
+                logical_path = base_path + '/' + file
+                res = irods_rest.lp_delete(
+                    _token = token,
+                    _logical_path = logical_path
+                )
+                assert(res == "")
+
+            for coll in colls:
+                admin.assert_icommand(['imkdir', coll])
+                logical_path = base_path + '/' + coll
+                res = irods_rest.lp_delete(
+                    _token = token,
+                    _logical_path = logical_path
+                )
+                assert(res == "")
+
 
     def test_access_with_explicit_arguments(self):
         with session.make_session_for_existing_admin() as admin:

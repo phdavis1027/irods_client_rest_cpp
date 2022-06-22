@@ -88,6 +88,7 @@ set(API_SERVER_NAMES
     StreamGet
     StreamPut
     ZoneReport
+    LogicalPath
     )
 
 foreach(API_NAME ${API_SERVER_NAMES})
