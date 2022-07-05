@@ -38,25 +38,29 @@ namespace irods::rest
                 if ( is_input_valid(json_cmds, conn) ){
                     std::vector<std::string> failed_cmds;
                     for (auto& cmd_obj : json_cmds){
-                        if ( "rename" == cmd_obj["cmd"] ) {
-                            fs::client::rename( // this function does not return a status value
-                                *conn(),
-                                cmd_obj["src"],
-                                cmd_obj["dst"]
-                            );
-                        } else if ( "delete" == cmd_obj["cmd"] ) {
-                            fs::extended_remove_options opts {
-                                .no_trash   = cmd_obj["opts"]["no-trash"],
-                                .verbose    = cmd_obj["opts"]["verbose"],
-                                .progress   = false,
-                                .recursive  = cmd_obj["opts"]["recursive"],
-                                .unregister = cmd_obj["opts"]["unregister"]
-                            };
+                        try {
+                            if ( "rename" == cmd_obj["cmd"] ) {
+                                fs::client::rename( // this function does not return a status value
+                                    *conn(),
+                                    cmd_obj["src"],
+                                    cmd_obj["dst"]
+                                );
+                            } else if ( "delete" == cmd_obj["cmd"] ) {
+                                fs::extended_remove_options opts {
+                                    .no_trash   = cmd_obj["opts"]["no-trash"],
+                                    .verbose    = cmd_obj["opts"]["verbose"],
+                                    .progress   = false,
+                                    .recursive  = cmd_obj["opts"]["recursive"],
+                                    .unregister = cmd_obj["opts"]["unregister"]
+                                };
 
-                            if ( ! fs::client::remove(*conn(), cmd_obj["cmd"], opts) ) {
+                                if ( ! fs::client::remove(*conn(), cmd_obj["cmd"], opts) ) {
+                                    failed_cmds.push_back(cmd_obj.dump());
+                                }
+                            } else {
                                 failed_cmds.push_back(cmd_obj.dump());
                             }
-                        } else {
+                        } catch ( const fs::filesystem_error& e ) {
                             failed_cmds.push_back(cmd_obj.dump());
                         }
                     }
