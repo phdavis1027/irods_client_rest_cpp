@@ -8,7 +8,7 @@
 #include <pistache/http_headers.h>
 #include <pistache/optional.h>
 #include <pistache/router.h>
-
+namespace fs = irods::experimental::filesystem;
 namespace irods::rest
 {
     // this is contractually tied directly to the api implementation
@@ -20,7 +20,6 @@ namespace irods::rest
     class logical_path_bulk : public api_base
     {
     public:
-        namespace fs = irods::experimental::filesystem;
         logical_path_bulk()
             : api_base{service_name}
         {
@@ -37,7 +36,35 @@ namespace irods::rest
                 // parse cmds into a json array
                 const auto json_cmds = nlohmann::json::parse(_cmds);
                 if ( is_input_valid(json_cmds, conn) ){
-                    ;
+                    std::vector<std::string> failed_cmds;
+                    for (auto& cmd_obj : json_cmds){
+                        if ( "rename" == cmd_obj["cmd"] ) {
+                            fs::client::rename( // this function does not return a status value
+                                *conn(),
+                                cmd_obj["src"],
+                                cmd_obj["dst"]
+                            );
+                        } else if ( "delete" == cmd_obj["cmd"] ) {
+                            fs::extended_remove_options opts {
+                                .no_trash   = cmd_obj["opts"]["no-trash"],
+                                .verbose    = cmd_obj["opts"]["verbose"],
+                                .progress   = false,
+                                .recursive  = cmd_obj["opts"]["recursive"],
+                                .unregister = cmd_obj["opts"]["unregister"]
+                            };
+
+                            if ( ! fs::client::remove(*conn(), cmd_obj["cmd"], opts) ) {
+                                failed_cmds.push_back(cmd_obj.dump());
+                            }
+                        } else {
+                            failed_cmds.push_back(cmd_obj.dump());
+                        }
+                    }
+                    nlohmann::json ret(failed_cmds);
+                    return std::make_tuple(
+                            Pistache::Http::Code::Ok,
+                            ret.dump()
+                    );
                 } else {
                     return std::make_tuple(Pistache::Http::Code::Bad_Request, "Request contained ill-formed commands");
                 }
