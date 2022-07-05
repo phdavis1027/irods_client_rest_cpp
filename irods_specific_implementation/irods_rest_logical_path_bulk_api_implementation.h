@@ -47,6 +47,10 @@ namespace irods::rest
                 error("Caught exception - [error_code={}] {}", e.code().value(), e.what());
                 return make_error_response(e.code().value(), e.what());
             }
+            catch (const nlohmann::json::exception& e){
+                error("Caught exception - [error_code={}] {}", e.code().value(), e.what());
+                return make_error_response(e.code().value(), e.what());
+            }
             catch (const irods::exception& e) {
                 error("Caught exception - [error_code={}] {}", e.code(), e.what());
                 return make_error_response(e.code(), e.what());
@@ -58,14 +62,23 @@ namespace irods::rest
         } // operator()
 
         bool is_input_valid(const nlohmann::json& json_obj) {
-            if ( ! json_obj.is_array() )
-            {
+            if ( ! json_obj.is_array() {
                 return false;
             }
 
-            for (auto it = json_obj.begin(); it != json_obj.end(); ++it)
-            {
+            for (auto& elem : json_obj) {
+                if ( "rename" == elem["cmd"] ) {
+                    auto args = elem["args"];
+                    // check if src exists
+                    if ( ! fs::exists(*conn(), args["src"]) ) return false;
+                    // check if dst exists
+                    if ( ! fs::exists(*conn(), args["dst"]) ) return false;
 
+                } else if ( "delete" == elem["cmd"] ) {
+                    auto args = elem["args"];
+                    auto opts = elem["opts"];
+                    if ( ! fs::exists(*conn(), args["logical-path"]) ) return false;
+                } else { return false; }
             }
 
             return true
