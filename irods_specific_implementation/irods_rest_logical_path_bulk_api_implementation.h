@@ -20,6 +20,7 @@ namespace irods::rest
     class logical_path_bulk : public api_base
     {
     public:
+        namespace fs = irods::experimental::filesystem;
         logical_path_bulk()
             : api_base{service_name}
         {
@@ -30,26 +31,24 @@ namespace irods::rest
         operator()(const Pistache::Rest::Request& _request,
                    Pistache::Http::ResponseWriter& _response)
         {
-            namespace fs = irods::experimental::filesystem;
-
             try {
+                auto conn = get_connection(_request.headers().getRaw("authorization").value());
                 const auto _cmds = _request.query().get("cmds").get();
                 // parse cmds into a json array
                 const auto json_cmds = nlohmann::json::parse(_cmds);
-                // iterate over cmds
-
-                  // check if each cmd is valid
-                    // we'll say if you elect to do bulk operations, then you have to specify every opt
-                  // if not, abort mission
-                // execute each one
+                if ( is_input_valid(json_cmds, conn) ){
+                    ;
+                } else {
+                    return std::make_tuple(Pistache::Http::Code::Bad_Request, "Request contained ill-formed commands");
+                }
             }
             catch (const fs::filesystem_error& e) {
                 error("Caught exception - [error_code={}] {}", e.code().value(), e.what());
                 return make_error_response(e.code().value(), e.what());
             }
             catch (const nlohmann::json::exception& e){
-                error("Caught exception - [error_code={}] {}", e.code().value(), e.what());
-                return make_error_response(e.code().value(), e.what());
+                error("Caught exception - [error_code={}] {}", 0, e.what());
+                return make_error_response(0, e.what());
             }
             catch (const irods::exception& e) {
                 error("Caught exception - [error_code={}] {}", e.code(), e.what());
@@ -61,28 +60,27 @@ namespace irods::rest
             }
         } // operator()
 
-        bool is_input_valid(const nlohmann::json& json_obj) {
-            if ( ! json_obj.is_array() {
+        bool is_input_valid(const nlohmann::json& json_obj, connection_proxy& conn) {
+            if ( ! json_obj.is_array() ){
                 return false;
             }
 
             for (auto& elem : json_obj) {
                 if ( "rename" == elem["cmd"] ) {
                     auto args = elem["args"];
-                    // check if src exists
-                    if ( ! fs::exists(*conn(), args["src"]) ) return false;
-                    // check if dst exists
-                    if ( ! fs::exists(*conn(), args["dst"]) ) return false;
-
+                    // check if src and dst exist
+                    if ( ! fs::client::exists(*conn(), args["src"]) || ! fs::client::exists(*conn(), args["dst"])) return false;
                 } else if ( "delete" == elem["cmd"] ) {
                     auto args = elem["args"];
                     auto opts = elem["opts"];
-                    if ( ! fs::exists(*conn(), args["logical-path"]) ) return false;
+                    if ( ! fs::client::exists(*conn(), args["logical-path"]) ) return false;
+                    if ( ! is_valid_http_bool(opts["unregister"]) ) return false;
+                    if ( ! is_valid_http_bool(opts["recursive"]) ) return false;
+                    if ( ! is_valid_http_bool(opts["verbose"]) ) return false;
                 } else { return false; }
             }
 
-            return true
+            return true;
         }
     }; // class logical_path
 } // namespace irods::rest
-

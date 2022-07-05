@@ -29,6 +29,7 @@
 #include <LogicalPathApi.h>
 #include <irods_rest_logical_path_delete_api_implementation.h>
 #include <irods_rest_logical_path_rename_api_implementation.h>
+#include <irods_rest_logical_path_bulk_api_implementation.h>
 
 #include <memory>
 #include <string>
@@ -57,6 +58,7 @@ namespace io::swagger::server::api
 
         irods::rest::logical_path_delete irods_logical_path_delete_;
         irods::rest::logical_path_rename irods_logical_path_rename_;
+        irods::rest::logical_path_bulk irods_logical_path_bulk_;
     }; // class LogicalPathApiImpl
 } // namespace io::swagger::server::api
 

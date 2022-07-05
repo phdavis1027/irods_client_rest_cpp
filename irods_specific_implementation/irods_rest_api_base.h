@@ -137,6 +137,11 @@ namespace irods::rest
             return s == "1" || s == "true";
         }
 
+        bool is_valid_http_bool(const std::string& s) noexcept
+        {
+            return s == "1" || s == "true" || s == "0" || s == "false";
+        }
+
         virtual ~api_base()
         {
         } // dtor
