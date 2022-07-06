@@ -54,13 +54,17 @@ namespace irods::rest
                                     .unregister = cmd_obj["opts"]["unregister"]
                                 };
 
+
                                 if ( ! fs::client::remove(*conn(), cmd_obj["cmd"], opts) ) {
+                                    cmd_obj["error"] = "[filesystem::client::remove] - Unknown error";
                                     failed_cmds.push_back(cmd_obj.dump());
                                 }
                             } else {
+                                cmd_obj["error"] = fmt::format("[iRODS REST client] - Unknown command: {}", cmd_obj["cmd"]);
                                 failed_cmds.push_back(cmd_obj.dump());
                             }
                         } catch ( const fs::filesystem_error& e ) {
+                            cmd_obj["error"] = e.what()
                             failed_cmds.push_back(cmd_obj.dump());
                         }
                     }
