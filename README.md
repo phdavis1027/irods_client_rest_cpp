@@ -346,6 +346,7 @@ This endpoint allows adding, setting, or removing metadata AVUs.
 
 **Parameters**
 cmds: A JSON-object encoding a single target, its entity type, and a list of operations to perform on it.
+See [here](https://docs.irods.org/4.3.0/doxygen/atomic__apply__metadata__operations_8h.html) for the format of these commands.
 
 **Example CURL Command:**
 ```
