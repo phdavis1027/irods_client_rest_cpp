@@ -606,11 +606,3 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         irods_rest.admin(token, 'modify', 'user', self.user.username, 'password', old_password, None, None, None)
         self.user.assert_icommand(['iinit', old_password])
         self.user.assert_icommand(['ils', '-ld'], 'STDOUT', [self.user.session_collection])
-
-def main():
-    rest = TestClientRest()
-    res = rest.construct_meta_ops_for_target("do", "data_object")
-    print(res)
-
-if __name__ == "__main__":
-    main()
