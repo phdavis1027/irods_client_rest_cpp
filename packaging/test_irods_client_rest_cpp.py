@@ -257,8 +257,9 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.assert_icommand(['iadmin', 'mkuser', "{}#tempZone".format(user)])
                 cmds = construct_meta_ops_for_target(user, "user")
                 res = irods_rest.meta(token, cmds)
-                assert(
-                    json.loads(res)["op_status"] == "SUCCESS"
+                self.assertEqual(
+                    json.loads(res)["op_status"],
+                    "SUCCESS"
                 )
 
             # create 5 collections
@@ -266,8 +267,8 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.assert_icommand(['imkdir', coll])
                 cmds = self.construct_meta_ops_for_target("/tempZone/home/rods/{}".format(coll), "collection")
                 res = irods_rest.meta(token, cmds)
-                assert(
-                    json.loads(res)["op_status"] == "SUCCESS"
+                self.assertEqual(
+                    json.loads(res)["op_status"], "SUCCESS"
                 )
 
             # create 5 do's within those collections
@@ -278,8 +279,9 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                     path = "/tempZone/home/rods/{}/{}".format(coll, do)
                     cmds = self.construct_meta_ops_for_target(path, "data_object")
                     res = irods_rest.meta(token, cmds)
-                    assert(
-                        json.loads(res)["op_status"] == "SUCCESS"
+                    self.assertEqual(
+                        json.loads(res)["op_status"],
+                        "SUCCESS"
                     )
 
 
@@ -289,8 +291,9 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.assert_icommand(['iadmin', 'mkresc', resc, 'unixfilesystem', "localhost:/var/lib/storageVault{}".format(resc[-1])])
                 cmds = self.construct_meta_ops_for_target(resc, "resource")
                 res = irods_rest.meta(token, cmds)
-                assert(
-                    json.loads(res)["op_status"] == "SUCCESS"
+                self.assertEqual(
+                    json.loads(res)["op_status"],
+                    "SUCCESS"
                 )
 
 
