@@ -61,7 +61,8 @@ namespace irods::rest
         _response.send(http_code, msg);
     } // handle_request
 
-    inline bool http_bool(const std::string& s) noexcept {
+    inline bool to_bool(std::string& s) noexcept {
+        boost::algorithm::to_lower(s);
         return s == "1" || s == "true";
     }
 
