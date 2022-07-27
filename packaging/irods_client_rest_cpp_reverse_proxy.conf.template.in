@@ -91,7 +91,7 @@ server {
         proxy_pass http://localhost:8090;
     }
 
-    location /irods-rest/@IRODS_CLIENT_VERSION@/meta {
+    location /irods-rest/@IRODS_CLIENT_VERSION@/metadata {
         if ($request_method = 'OPTIONS') {
             return 204;
         }
