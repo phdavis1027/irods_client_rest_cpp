@@ -245,57 +245,64 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         os.remove(file1)
         os.remove(file2)
 
-    def test_meta(self):
-        users = [ 'user' + i for i in range(5) ]
-        collections = [ 'coll' + i for i in range(5) ]
-        dobjects = [ 'do' + i for i in range(5) ]
-        resources = [ 'resc' + i for i in range(5) ]
+    def test_meta_data_object(self):
+        data_object = 'data_object'
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        pwd, _ lib.execute_command(['ipwd'])
 
         with session.make_session_for_existing_admin() as admin:
-            token = irods_rest.authenticate('rods', 'rods', 'native')
-            for user in users:
-                admin.assert_icommand(['iadmin', 'mkuser', "{}#tempZone".format(user)])
-                cmds = construct_meta_ops_for_target(user, "user")
-                res = irods_rest.meta(token, cmds)
-                self.assertEqual(
-                    json.loads(res)["op_status"],
-                    "SUCCESS"
-                )
+            path = pwd + '/' + data_object
+            admin.assert_icommand(['itouch', path])
+            cmds = construct_meta_ops_for_target(path, 'data_object')
+            res = irods_rest.meta(
+                token,
+                cmds
+            )
+            self.assertEqual(res, '')
+            admin.assert_icommand(['irm', path])
 
-            # create 5 collections
-            for coll in collections:
-                admin.assert_icommand(['imkdir', coll])
-                cmds = self.construct_meta_ops_for_target("/tempZone/home/rods/{}".format(coll), "collection")
-                res = irods_rest.meta(token, cmds)
-                self.assertEqual(
-                    json.loads(res)["op_status"], "SUCCESS"
-                )
+    def test_meta_collection(self):
+        collection = 'collections'
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        pwd, _ lib.execute_command(['ipwd'])
+        with session.make_session_for_existing_admin() as admin:
+            path = pwd + '/' + collection
+            admin.assert_icommand(['imkdir', path])
+            cmds = construct_meta_ops_for_target(path, 'collection')
+            res = irods_rest.meta(
+                token,
+                cmds
+            )
+            self.assertEqual(res, '')
+            admin.assert_icommand(['irmdir', path])
 
-            # create 5 do's within those collections
-            for coll in collections:
-                admin.assert_icommand(['icd', "/tempZone/home/rods/{}".format(coll)])
-                for do in dobjects:
-                    admin.assert_icommand(['itouch', do])
-                    path = "/tempZone/home/rods/{}/{}".format(coll, do)
-                    cmds = self.construct_meta_ops_for_target(path, "data_object")
-                    res = irods_rest.meta(token, cmds)
-                    self.assertEqual(
-                        json.loads(res)["op_status"],
-                        "SUCCESS"
-                    )
-
-
-
-            # create 5 resources
-            for resc in resources:
-                admin.assert_icommand(['iadmin', 'mkresc', resc, 'unixfilesystem', "localhost:/var/lib/storageVault{}".format(resc[-1])])
-                cmds = self.construct_meta_ops_for_target(resc, "resource")
-                res = irods_rest.meta(token, cmds)
-                self.assertEqual(
-                    json.loads(res)["op_status"],
-                    "SUCCESS"
-                )
-
+    def test_meta_user(self):
+        user = 'user'
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        pwd, _ lib.execute_command(['ipwd'])
+        with session.make_session_for_existing_admin() as admin:
+            path = pwd + '/' + collection
+            admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
+            cmds = construct_meta_ops_for_target(user, user)
+            res = irods_rest.meta(
+                token,
+                cmds
+            )
+            self.assertEqual(res, '')
+            admin.assert_icommand('iadmin', 'rmuser', user)
+    def test_meta_resource(self):
+        resource = 'resource'
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        pwd, _ lib.execute_command(['ipwd'])
+        with session.make_session_for_existing_admin() as admin:
+            admin.assert_icommand(['iadmin', 'mkresc', resource, 'unixfilesystem', '`hostname`:/var/lib/irods/new_vault'])
+            cmds = construct_meta_ops_for_target(resource, resource)
+            res = irods_rest.meta(
+                token,
+                cmds
+            )
+            self.assertEqual(res, '')
+            admin.assert_icommand('iadmkin', 'rmresc', resource)
 
     def construct_meta_ops_for_target(self, _target, _entity_type):
         ops = {
