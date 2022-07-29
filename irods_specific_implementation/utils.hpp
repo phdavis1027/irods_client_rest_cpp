@@ -62,8 +62,7 @@ namespace irods::rest
     } // handle_request
 
     inline bool to_bool(std::string& s) noexcept {
-        boost::algorithm::to_lower(s);
-        return s == "1" || s == "true";
+        return s == "1"; // We only honor 1 on this endpoint
     }
 
 } // namespace irods::rest
