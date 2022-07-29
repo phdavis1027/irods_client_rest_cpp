@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef META_API_IMPL_H_
-#define META_API_IMPL_H_
+#ifndef METADATA_API_IMPL_H_
+#define METADATA_API_IMPL_H_
 
 #include <pistache/endpoint.h>
 #include <pistache/http.h>
@@ -40,4 +40,4 @@ namespace io::swagger::server::api
     }; // class MetaApiImpl
 } // namespace io::swagger::server::api
 
-#endif // META_API_IMPL_H_
+#endif // METADATA_API_IMPL_H_
