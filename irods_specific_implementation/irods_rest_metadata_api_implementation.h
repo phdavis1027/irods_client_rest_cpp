@@ -56,6 +56,11 @@ namespace irods::rest
                 error("Caught exception - {}", e.what());
                 return make_error_response(SYS_INVALID_INPUT_PARAM, e.what());
             }
+            catch (...){
+                const auto* msg = "Caught unknown exception while processing metadata operation request";
+                error(msg);
+                return make_error_response(SYS_UNKNOWN_ERROR, msg);
+            }
         } // operator()
     }; // class metadata
 } // namespace irods::rest
