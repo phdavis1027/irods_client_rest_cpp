@@ -290,6 +290,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             )
             self.assertEqual(res, '')
             admin.assert_icommand('iadmin', 'rmuser', user)
+
     def test_meta_resource(self):
         resource = 'resource'
         token = irods_rest.authenticate('rods', 'rods', 'native')
