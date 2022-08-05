@@ -49,6 +49,7 @@ namespace irods::rest {
                 intmax_t offset_counter{0};
                 const intmax_t offset = std::stoi(_offset);
                 const intmax_t limit  = std::stoi(_limit);
+                intmax_t total_size = 0;
 
                 const bool stat        = ("true" == _stat);
                 const bool permissions = ("true" == _permissions);
@@ -68,6 +69,8 @@ namespace irods::rest {
                     if (stat) { aggregate_stat_information(*conn(), obj_info, start_path); }
                     if (permissions) { aggregate_permissions_information(obj_info, object_status.permissions()); }
                     if (metadata) { aggregate_metadata_information(*conn(), obj_info, start_path); }
+
+                    total_size += obj_info.at("size").get<intmax_t>();
 
                     objects.push_back(obj_info);
                 }
@@ -90,6 +93,8 @@ namespace irods::rest {
                                 if (stat) { aggregate_stat_information(*conn(), obj_info, p.path()); }
                                 if (permissions) { aggregate_permissions_information(obj_info, object_status.permissions()); }
                                 if (metadata) { aggregate_metadata_information(*conn(), obj_info, p.path()); }
+
+                                total_size += obj_info.at("size").get<intmax_t>();
 
                                 objects.push_back(obj_info);
                             }
@@ -122,6 +127,8 @@ namespace irods::rest {
                                 if (permissions) { aggregate_permissions_information(obj_info, object_status.permissions()); }
                                 if (metadata) { aggregate_metadata_information(*conn(), obj_info, p.path()); }
 
+                                total_size += obj_info.at("size").get<intmax_t>();
+
                                 objects.push_back(obj_info);
                             }
                             catch (const irods::exception& e) {
@@ -144,6 +151,7 @@ namespace irods::rest {
 
                 nlohmann::json results = nlohmann::json::object();
                 results["_embedded"] = objects;
+                results["_total_size"] = total_size;
 
                 nlohmann::json links = nlohmann::json::object();
                 constexpr auto* url_part = "/list?path={}&stat={}&permissions={}&metadata={}&offset={}&limit={}";
