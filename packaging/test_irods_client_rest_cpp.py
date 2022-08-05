@@ -295,7 +295,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         token = irods_rest.authenticate('rods', 'rods', 'native')
         pwd, _ lib.execute_command(['ipwd'])
         with session.make_session_for_existing_admin() as admin:
-            admin.assert_icommand(['iadmin', 'mkresc', resource, 'unixfilesystem', '`hostname`:/var/lib/irods/new_vault'])
+            lib.create_ufs_resource(resource, admin)
             cmds = construct_meta_ops_for_target(resource, resource)
             res = irods_rest.meta(
                 token,
