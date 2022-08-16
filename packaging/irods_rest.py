@@ -1,53 +1,71 @@
 import os, pycurl, getopt, sys, urllib
 from functools import partial
-from StringIO import StringIO
+from io import StringIO ## for Python 3
 import base64
 import tempfile
 
-class old_pycurl_mock_StringIO(file):
-    def __init__(self,*a,**kw):
-        if not a:
-            self.__name = tempfile.mktemp()
-            a = (self.__name,'w+b')
-        super(old_pycurl_mock_StringIO,self).__init__(*a,**kw)
-    def __del__(self):
-        self.close()
-        os.unlink(self.__name)
-    def getvalue(self):
-        self.seek(0)
-        return self.read()
-
-class old_pycurl_mock_BytesIO(old_pycurl_mock_StringIO):
-    def __init__(self,bytestr=''):
-        super(old_pycurl_mock_BytesIO,self).__init__()
-        if bytestr:
-            self.write(bytestr)
-            self.flush()
-            self.seek(0)
+from remote_pdb import RemotePdb
 
 try:
     from io import BytesIO
 except ImportError:
     from StringIO import StringIO as BytesIO
 
+# breaker = RemotePdb('0.0.0.0', 4444)
+
 def base_url():
     return "http://localhost/irods-rest/0.9.0/"
 
-if [int(x) for x in pycurl.version_info()[1].split('.')][:2] <= [7,29]:
-    StringIO = old_pycurl_mock_StringIO
-    BytesIO = old_pycurl_mock_BytesIO
-
 def authenticate(_user_name, _password, _auth_type):
-    buffer = StringIO()
+    buffer = BytesIO()
 
     creds = _user_name + ':' + _password
     buff  = creds.encode('ascii')
     token = base64.b64encode(buff , None)
 
     c = pycurl.Curl()
-    c.setopt(pycurl.HTTPHEADER,['Authorization: Native '+token])
+    c.setopt(pycurl.HTTPHEADER, ['Authorization: Native '+ token.decode()])
     c.setopt(c.CUSTOMREQUEST, 'POST')
     url = base_url()+'auth'
+
+    c.setopt(c.URL, url)
+    c.setopt(c.WRITEDATA, buffer)
+
+    c.perform()
+    c.close()
+
+    body = buffer.getvalue()
+
+    return body.decode('utf-8')
+
+def logical_path_rename(_token, _src, _dst):
+    buffer = BytesIO()
+    c = pycurl.Curl()
+    c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
+    c.setopt(c.CUSTOMREQUEST, 'POST')
+    url = base_url()+'logicalpath/rename?src={0}&dst={1}'.format(_src, _dst)
+
+    c.setopt(c.URL, url)
+    c.setopt(c.WRITEDATA, buffer)
+
+    c.perform()
+    c.close()
+
+    body = buffer.getvalue()
+
+    return body.decode('utf-8')
+
+def logical_path_delete(_token, _logical_path, _no_trash = None,
+                        _recursive = None, _unregister = None):
+    buffer = BytesIO()
+    c = pycurl.Curl()
+    c.setopt(pycurl.HTTPHEADER,['Authorization: ' + _token])
+    c.setopt(c.CUSTOMREQUEST, 'DELETE')
+
+    url = base_url()+'logicalpath?logical-path={0}'.format(_logical_path)
+    if _no_trash: url += '&no-trash=1'
+    if _unregister: url += '&unregister=1'
+    if _recursive: url += '&recursive=1'
 
     c.setopt(c.URL, url)
     c.setopt(c.WRITEDATA, buffer)
@@ -56,7 +74,7 @@ def authenticate(_user_name, _password, _auth_type):
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def logical_path_rename(_token, _src, _dest):
     buffer = StringIO()
@@ -98,7 +116,7 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 def access(_token, _logical_path, _ticket_type=None, _use_count=None,
            _write_file_count=None, _write_byte_count=None, _seconds_until_expiration=None,
            _users=None, _groups=None, _hosts=None):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -122,10 +140,10 @@ def access(_token, _logical_path, _ticket_type=None, _use_count=None,
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def get_configuration(_token):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -140,10 +158,10 @@ def get_configuration(_token):
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def put_configuration(_token, _cfg):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -158,10 +176,10 @@ def put_configuration(_token, _cfg):
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def list(_token, _path, _stat, _permissions, _metadata, _offset, _limit):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -176,27 +194,21 @@ def list(_token, _path, _stat, _permissions, _metadata, _offset, _limit):
 
     body = buffer.getvalue()
 
-    return body
-
-def meta(_token, _cmds):
-    buffer = StringIO()
-    c = pycurl.Curl()
-    c.setopt(pycurl.HTTPHEADER,['Authorization: '+  _token])
-    c.setopt(c.CUSTOMREQUEST, 'POST')
-    url = base_url()+f"meta?cmds={_cmds}"
-    c.setopt(c.URL, url)
-    c.setopt(c.WRITEDATA, buffer)
-    c.perform()
-    c.close()
-    body = buffer.getvalue()
-    return body
+    return body.decode('utf-8')
 
 def put(_token, _physical_path, _logical_path, _ticket_id=None):
     body = ""
     offset = 0
     file_size = 0
     read_size = 1024 * 1024 * 4
+    print('entered irods_rest.put')
     with open(_physical_path, 'r') as f:
+        print('opened physical path')
+        print('canary')
+        i = 0
+        data_list = [item for item in iter(partial(f.read, read_size), b'')]
+        print(data_list)
+        print("Relevant length is: ", len(data_list))
         for data in iter(partial(f.read, read_size), b''):
             c = pycurl.Curl()
             c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
@@ -215,7 +227,7 @@ def put(_token, _physical_path, _logical_path, _ticket_id=None):
             file_size = file_size + len(data)
             c.setopt(c.URL, '{0}stream?path={1}&offset={2}&count={3}'.format(base_url(), _logical_path, offset, file_size))
 
-            body_buffer = StringIO()
+            body_buffer = BytesIO()
             c.setopt(c.WRITEDATA, body_buffer)
 
             c.perform()
@@ -225,12 +237,17 @@ def put(_token, _physical_path, _logical_path, _ticket_id=None):
             c.close()
 
             body = body_buffer.getvalue()
-    return body
+            print(i)
+            i += 1
+        print('exited loop')
+    return body.decode('utf-8')
 
 def get(_token, _physical_path, _logical_path, _ticket_id=None):
     offset = 0
     read_size = 1024 * 1024 * 4
+    print('entered irods_rest.get')
     with open(_physical_path, 'w') as f:
+        print('opened physical path')
         while True:
             c = pycurl.Curl()
             c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
@@ -251,6 +268,8 @@ def get(_token, _physical_path, _logical_path, _ticket_id=None):
             c.close()
 
             body = body_buffer.getvalue()
+            print('Length of body:', len(body))
+            print(body.decode('utf-8'))
 
             if len(body) == 0:
                 print("Length of body is zero")
@@ -263,7 +282,7 @@ def get(_token, _physical_path, _logical_path, _ticket_id=None):
     return "Success"
 
 def admin(_token, _action, _target, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -278,7 +297,7 @@ def admin(_token, _action, _target, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7):
                'arg6'   : _arg6,
                'arg7'   : _arg7
              }
-    url = base_url()+'admin?'+urllib.urlencode(params)
+    url = base_url()+'admin?'+urllib.parse.urlencode(params)
 
     c.setopt(c.URL, url)
     c.setopt(c.WRITEDATA, buffer)
@@ -287,10 +306,10 @@ def admin(_token, _action, _target, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7):
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def zone_report(_token):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -304,10 +323,10 @@ def zone_report(_token):
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def query(_token, _string, _limit, _offset, _type, _case_sensitive='1', _distinct='1'):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
@@ -319,7 +338,7 @@ def query(_token, _string, _limit, _offset, _type, _case_sensitive='1', _distinc
               'query_type'    : _type,
               'case_sensitive': _case_sensitive,
               'distinct'      : _distinct}
-    url = base_url() + 'query?' + urllib.urlencode(params)
+    url = base_url() + 'query?' + urllib.parse.urlencode(params)
 
     c.setopt(c.URL, url)
     c.setopt(c.WRITEDATA, buffer)
@@ -328,7 +347,7 @@ def query(_token, _string, _limit, _offset, _type, _case_sensitive='1', _distinc
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def get_arguments():
     full_args = sys.argv
@@ -371,7 +390,7 @@ def main():
         qtype  = get_value(args, 'type')
         limit  = get_value(args, 'limit')
         offset = get_value(args, 'offset')
-        print query(token, qstr, limit, offset, qtype)
+        print (query(token, qstr, limit, offset, qtype))
     elif('admin' == cmd):
         action = get_value(args, 'action')
         target = get_value(args, 'target')
@@ -381,16 +400,16 @@ def main():
         arg5   = get_value(args, 'arg5')
         arg6   = get_value(args, 'arg6')
         arg7   = get_value(args, 'arg7')
-        print admin(token, action, target, arg2, arg3, arg4, arg5, arg6, arg7)
+        print (admin(token, action, target, arg2, arg3, arg4, arg5, arg6, arg7))
     elif('get_configuration' == cmd):
-        print get_configuration(token)
+        print (get_configuration(token))
     elif('put_configuration' == cmd):
         cfg    = get_value(args, 'configuration')
-        print put_configuration(token, cfg)
+        print (put_configuration(token, cfg))
     elif('get' == cmd):
-        print get(token, get_value(args,'physical_path'), get_value(args,'logical_path'))
+        print (get(token, get_value(args,'physical_path'), get_value(args,'logical_path')))
     elif('put' == cmd):
-        print put(token, get_value(args,'physical_path'), get_value(args,'logical_path'))
+        print (put(token, get_value(args,'physical_path'), get_value(args,'logical_path')))
     elif('list' == cmd):
         path   = get_value(args, 'logical_path')
         limit  = get_value(args, 'limit')
@@ -398,12 +417,12 @@ def main():
         stat   = get_flag(args, 'stat')
         mdata  = get_flag(args, 'metadata')
         perms  = get_flag(args, 'permissions')
-        print list(token, path, stat, perms, mdata, offset, limit)
+        print(list(token, path, stat, perms, mdata, offset, limit))
     elif('access' == cmd):
         path = get_value(args, 'logical_path')
-        print access(token, path)
+        print(access(token, path))
     elif('zone_report' == cmd):
-        print zone_report(token)
+        print(zone_report(token))
     else:
         print('Command ['+cmd+'] is not supported.')
 

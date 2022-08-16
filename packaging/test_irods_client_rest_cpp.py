@@ -11,7 +11,8 @@ from .. import lib
 from . import session
 
 import json
-import irods_rest
+from . import irods_rest
+from remote_pdb import RemotePdb
 
 class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unittest.TestCase):
 
@@ -29,7 +30,6 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
     def test_authentication(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         assert(token.find('827000') == -1)
-
 
     def test_access_with_default_arguments(self):
         with session.make_session_for_existing_admin() as admin:
@@ -124,6 +124,63 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             admin.assert_icommand(['irm', path])
 
 
+    def test_logical_path_rename(self):
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        with session.make_session_for_existing_admin() as admin:
+            try:
+                coll = admin.home_collection + "/coll"
+
+                # test on a data object
+                new_coll = coll.replace('coll', 'new_coll')
+                dobj = new_coll + "/data_object"
+                new_dobj = dobj.replace("data_object", "new_data_object")
+                admin.assert_icommand(['imkdir', coll])
+                res = irods_rest.logical_path_rename(
+                    token,
+                    coll,
+                    new_coll
+                )
+                self.assertEqual(res, "")
+                # test on a collection
+                # make sure that it works with a collection that's actually populated
+                admin.assert_icommand(['itouch', dobj])
+                res = irods_rest.logical_path_rename(
+                    token,
+                    dobj,
+                    new_dobj
+                )
+                self.assertEqual(res, "")
+            finally:
+                admin.run_icommand(['irm', '-r', '-f', new_coll])
+
+
+    def test_logical_path_delete(self):
+        token = irods_rest.authenticate('rods', 'rods', 'native')
+        with session.make_session_for_existing_admin() as admin:
+            # test on data object
+            coll_path = admin.home_collection + '/coll'
+            dobj_path = coll_path + '/data_object'
+            admin.assert_icommand(['imkdir', coll_path])
+            admin.assert_icommand(['itouch', dobj_path])
+            res = irods_rest.logical_path_delete(
+                token,
+                dobj_path
+            )
+            self.assertEqual(res, "")
+            # test on collections
+            res = irods_rest.logical_path_delete(
+                token,
+                coll_path
+            )
+            self.assertIn( "'recursive=1' required to delete a collection. Make sure you want to delete the whole sub-tree.", res)
+            res = irods_rest.logical_path_delete(
+                token,
+                coll_path,
+                _recursive=True
+            )
+            self.assertEqual(res, "")
+
+
     def test_access_with_explicit_arguments(self):
         with session.make_session_for_existing_admin() as admin:
             try:
@@ -146,12 +203,15 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 write_byte_count = 9999
                 seconds_until_expiration = 45
                 users = 'rods'
-                groups = 'rodsadmin'
+                groups = 'newgroup'
                 hosts = 'irods.org'
+
+                admin.assert_icommand(['iadmin', 'mkgroup', groups])
 
                 json_string = irods_rest.access(token, logical_path, ticket_type, use_count,
                                                 write_file_count, write_byte_count, seconds_until_expiration,
                                                 users, groups, hosts)
+
                 json_object = json.loads(json_string)
                 ticket_id = json_object['headers']['irods-ticket'][0]
 
@@ -176,7 +236,8 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
 
             finally:
                 os.remove(file_name)
-                admin.assert_icommand(['irm', '-f', file_name])
+                admin.run_icommand(['irm', '-f', file_name])
+                admin.run_icommand(['iadmin', 'rmgroup', groups])
 
     def test_access_returns_error_on_invalid_value_for_seconds_until_expiration_parameter(self):
         with session.make_session_for_existing_admin() as admin:
@@ -421,7 +482,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.assert_icommand(['imeta', 'set', '-d', logical_path, 'attr', 'val', 'unit'])
 
                 token  = irods_rest.authenticate('rods', 'rods', 'native')
-                result = irods_rest.list(token, logical_path, 'true', 'true', 'true', 0, 0)
+                result = irods_rest.list(token, logical_path, '1', '1', '1', 0, 0)
 
                 lst = json.loads(result)['_embedded'][0]
 
@@ -570,12 +631,18 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 pwd = pwd.rstrip()
                 logical_path = os.path.join(pwd, file_name)
 
+                print("test_stream_put_and_get pre_auth")
                 token = irods_rest.authenticate('rods', 'rods', 'native')
+                print("test_stream_put_and_get post_auth")
 
+                print("test_stream_put_and_get pre_put")
                 irods_rest.put(token, file_name, logical_path)
+                print("test_stream_put_and_get post_put")
                 admin.assert_icommand(['ils', '-l'], 'STDOUT_SINGLELINE', file_name)
 
+                print("test_stream_put_and_get pre_get")
                 irods_rest.get(token, downloaded_file_name, logical_path)
+                print("test_stream_put_and_get post_get")
 
                 sz  = os.path.getsize(file_name)
                 sz2 = os.path.getsize(downloaded_file_name)
@@ -614,10 +681,11 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         # Show that reauthenticating with the new password restores the user's ability
         # to execute commands. This proves the REST API is able to change passwords without
         # requiring the user to obfuscate the password first.
-        self.user.assert_icommand(['iinit', new_password])
+        self.user.assert_icommand(['iinit'], 'STDOUT', 'Enter your current iRODS password:', input=new_password + '\n')
         self.user.assert_icommand(['ils', '-ld'], 'STDOUT', [self.user.session_collection])
 
         # Restore the user's password for other tests.
         irods_rest.admin(token, 'modify', 'user', self.user.username, 'password', old_password, None, None, None)
-        self.user.assert_icommand(['iinit', old_password])
+        self.user.assert_icommand(['iinit'], 'STDOUT', 'Enter your current iRODS password:', input=old_password + '\n')
         self.user.assert_icommand(['ils', '-ld'], 'STDOUT', [self.user.session_collection])
+
