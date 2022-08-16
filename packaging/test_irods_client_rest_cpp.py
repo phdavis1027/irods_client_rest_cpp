@@ -248,62 +248,66 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
     def test_meta_data_object(self):
         data_object = 'data_object'
         token = irods_rest.authenticate('rods', 'rods', 'native')
-        pwd, _ lib.execute_command(['ipwd'])
 
         with session.make_session_for_existing_admin() as admin:
-            path = pwd + '/' + data_object
-            admin.assert_icommand(['itouch', path])
-            cmds = construct_meta_ops_for_target(path, 'data_object')
-            res = irods_rest.meta(
-                token,
-                cmds
-            )
-            self.assertEqual(res, '')
-            admin.assert_icommand(['irm', path])
+            try:
+                path = os.path.join(admin.home_collection, data_object)
+                admin.assert_icommand(['itouch', path])
+                cmds = construct_meta_ops_for_target(path, 'data_object')
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
+            finally:
+                admin.run_icommand(['irm', path])
 
     def test_meta_collection(self):
         collection = 'collections'
         token = irods_rest.authenticate('rods', 'rods', 'native')
-        pwd, _ lib.execute_command(['ipwd'])
+
         with session.make_session_for_existing_admin() as admin:
-            path = pwd + '/' + collection
-            admin.assert_icommand(['imkdir', path])
-            cmds = construct_meta_ops_for_target(path, 'collection')
-            res = irods_rest.meta(
-                token,
-                cmds
-            )
-            self.assertEqual(res, '')
-            admin.assert_icommand(['irmdir', path])
+            try:
+                path = os.path.join(admin.home_collection, collection)
+                admin.assert_icommand(['imkdir', path])
+                cmds = construct_meta_ops_for_target(path, 'collection')
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
+            finally:
+                admin.run_icommand(['irmdir', path])
 
     def test_meta_user(self):
         user = 'user'
         token = irods_rest.authenticate('rods', 'rods', 'native')
-        pwd, _ lib.execute_command(['ipwd'])
         with session.make_session_for_existing_admin() as admin:
-            path = pwd + '/' + collection
-            admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
-            cmds = construct_meta_ops_for_target(user, user)
-            res = irods_rest.meta(
-                token,
-                cmds
-            )
-            self.assertEqual(res, '')
-            admin.assert_icommand('iadmin', 'rmuser', user)
+            try:
+                admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
+                cmds = construct_meta_ops_for_target(user, user)
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
+            finally:
+                admin.run_icommand(['iadmin','rmuser', user])
 
     def test_meta_resource(self):
         resource = 'resource'
         token = irods_rest.authenticate('rods', 'rods', 'native')
-        pwd, _ lib.execute_command(['ipwd'])
         with session.make_session_for_existing_admin() as admin:
-            lib.create_ufs_resource(resource, admin)
-            cmds = construct_meta_ops_for_target(resource, resource)
-            res = irods_rest.meta(
-                token,
-                cmds
-            )
-            self.assertEqual(res, '')
-            admin.assert_icommand('iadmkin', 'rmresc', resource)
+            try:
+                lib.create_ufs_resource(resource, admin)
+                cmds = construct_meta_ops_for_target(resource, resource)
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
+            finally:
+                admin.assert_icommand('iadmin', 'rmresc', resource)
 
     def construct_meta_ops_for_target(self, _target, _entity_type):
         ops = {
