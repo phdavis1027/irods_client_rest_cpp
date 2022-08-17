@@ -371,7 +371,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 )
                 self.assertEqual(res, '')
             finally:
-                admin.run_icommand('iadmin', 'rmresc', resource)
+                admin.run_icommand(['iadmin', 'rmresc', resource])
 
     def construct_meta_ops_for_target(self, _target, _entity_type):
         ops = {
