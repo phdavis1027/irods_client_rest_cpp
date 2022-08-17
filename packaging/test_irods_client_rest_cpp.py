@@ -324,11 +324,11 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 )
                 self.assertEqual(res, '')
 
-                desired_attr = json.loads(cmds)['operations']['0']['attribute']
-                desired_val= json.loads(cmds)['operations']['0']['value']
-                self.assertTrue(metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+                desired_attr = json.loads(cmds)['operations'][0]['attribute']
+                desired_val= json.loads(cmds)['operations'][0]['value']
+                self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
-                cmds = construct_remove_meta_op_for_target(path, 'data_object')
+                cmds = self.construct_remove_meta_op_for_target(path, 'data_object')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -354,9 +354,9 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 )
                 self.assertEqual(res, '')
 
-                desired_attr = json.loads(cmds)['operations']['0']['attribute']
-                desired_val= json.loads(cmds)['operations']['0']['value']
-                self.assertTrue(metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+                desired_attr = json.loads(cmds)['operations'][0]['attribute']
+                desired_val= json.loads(cmds)['operations'][0]['value']
+                self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
                 cmds = self.construct_add_meta_op_for_target(path, 'collection')
                 res = irods_rest.meta(
@@ -379,6 +379,17 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                     cmds
                 )
                 self.assertEqual(res, '')
+
+                desired_attr = json.loads(cmds)['operations'][0]['attribute']
+                desired_val= json.loads(cmds)['operations'][0]['value']
+                self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+
+                cmds = self.construct_remove_meta_op_for_target(user, 'user')
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
             finally:
                 admin.run_icommand(['iadmin','rmuser', user])
 
@@ -389,6 +400,17 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 lib.create_ufs_resource(resource, admin)
                 cmds = self.construct_add_meta_op_for_target(resource, resource)
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
+
+                desired_attr = json.loads(cmds)['operations'][0]['attribute']
+                desired_val= json.loads(cmds)['operations'][0]['value']
+                self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+
+                cmds = self.construct_remove_meta_op_for_target(resource, resource)
                 res = irods_rest.meta(
                     token,
                     cmds
