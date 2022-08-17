@@ -317,12 +317,25 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 path = os.path.join(admin.home_collection, data_object)
                 admin.assert_icommand(['itouch', path])
-                cmds = self.construct_meta_ops_for_target(path, 'data_object')
+                cmds = self.construct_add_meta_op_for_target(path, 'data_object')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
                 self.assertEqual(res, '')
+
+                desired_attr = json.loads(cmds)['operations']['0']['attribute']
+                desired_val= json.loads(cmds)['operations']['0']['value']
+                self.assertTrue(metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+
+                cmds = construct_remove_meta_op_for_target(path, 'data_object')
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+            
+                self.assertEqual(res, '')
+
             finally:
                 admin.run_icommand(['irm', path])
 
@@ -334,14 +347,25 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 path = os.path.join(admin.home_collection, collection)
                 admin.assert_icommand(['imkdir', path])
-                cmds = self.construct_meta_ops_for_target(path, 'collection')
+                cmds = self.construct_add_meta_op_for_target(path, 'collection')
+                res = irods_rest.meta(
+                    token,
+                    cmds
+                )
+                self.assertEqual(res, '')
+
+                desired_attr = json.loads(cmds)['operations']['0']['attribute']
+                desired_val= json.loads(cmds)['operations']['0']['value']
+                self.assertTrue(metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+
+                cmds = self.construct_add_meta_op_for_target(path, 'collection')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
                 self.assertEqual(res, '')
             finally:
-                admin.run_icommand(['irmdir', path])
+                admin.run_icommand(['irm', '-r', '-f', path])
 
     def test_meta_user(self):
         user = 'user_one'
@@ -349,7 +373,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         with session.make_session_for_existing_admin() as admin:
             try:
                 admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
-                cmds = self.construct_meta_ops_for_target(user, 'user')
+                cmds = self.construct_add_meta_op_for_target(user, 'user')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -364,7 +388,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         with session.make_session_for_existing_admin() as admin:
             try:
                 lib.create_ufs_resource(resource, admin)
-                cmds = self.construct_meta_ops_for_target(resource, resource)
+                cmds = self.construct_add_meta_op_for_target(resource, resource)
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -373,7 +397,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             finally:
                 admin.run_icommand(['iadmin', 'rmresc', resource])
 
-    def construct_meta_ops_for_target(self, _target, _entity_type):
+    def construct_add_meta_op_for_target(self, _target, _entity_type):
         ops = {
             "entity_name" : _target,
             "entity_type" : _entity_type,
@@ -383,7 +407,17 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                     "attribute" : "{}attrib{}".format(_entity_type, _target[:-1]),
                     "value" : "{}value{}".format(_entity_type, _target[:-1]),
                     "units" : "{}units{}".format(_entity_type, _target[:-1])
-                },
+                }
+            ]
+        }
+        return json.dumps(ops)
+
+    
+    def construct_remove_meta_op_for_target(self, _target, _entity_type):
+        ops = {
+            "entity_name" : _target,
+            "entity_type" : _entity_type,
+            "operations"  : [
                 {
                     "operation" : "remove",
                     "attribute" : "{}attrib{}s".format(_entity_type, _target[:-1]),
@@ -392,6 +426,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 }
             ]
         }
+
         return json.dumps(ops)
 
     def test_list(self):
