@@ -340,7 +340,7 @@ curl -X PUT -H "Authorization: ${TOKEN}" "http://localhost/irods-rest/0.9.1/put_
 Nothing on success
 
 ### /metadata
-This endpoint allows adding, setting, or removing metadata AVUs.
+This endpoint allows executing multiple metadata operations on a single object atomically.
 
 **Method**: POST
 
@@ -350,11 +350,24 @@ See [here](https://docs.irods.org/4.3.0/doxygen/atomic__apply__metadata__operati
 
 **Example CURL Command:**
 ```
-export CMDS="{"operations": [{"units": "data_object_units_do", "attribute": "data_object_attrib_do",\
-"operation": "add", "value": "data_object_value_do"}, {"units": "data_object_units_do_s", "attribute":\
-"data_object_attrib_do_s", "operation": "set", "value": "data_object_value_do_s"}, {"units":\
-"data_object_units_do_s", "attribute": "data_object_attrib_do_s", "operation": "remove", "value":\
-"data_object_value_do_s"}], "entity_name": "do1", "entity_type": "data_object"}"
+export CMDS="{\
+  "entity_name": "foo.cpp",\
+  "entity_type": "data_object",\
+  "operations": [\
+    {\
+      "operation": "add",\
+      "attribute": "data_object_attrib_foo.cp",\
+      "value": "data_object_value_foo.cp",\
+      "units": "data_object_units_foo.cp"\
+    },\
+    {\
+      "operation": "remove",\
+      "attribute": "data_object_attrib_foo.cp",\
+      "value": "data_object_value_foo.cp",\
+      "units": "data_object_units_foo.cp"\
+    }\
+  ]\
+}"
 curl -X POST -H "Authorization: ${TOKEN}" "http://localhost/irods-rest/0.9.1/metadata?cmds=${CMDS}"
 ```
 

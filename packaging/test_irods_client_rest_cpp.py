@@ -309,15 +309,15 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         os.remove(file1)
         os.remove(file2)
 
-    def test_meta_data_object(self):
-        data_object = 'data_object'
+    def test_add_and_remove_metadata_on_data_object__issue_118(self):
+        data_object = 'metadata_test_data_object'
         token = irods_rest.authenticate('rods', 'rods', 'native')
 
         with session.make_session_for_existing_admin() as admin:
             try:
                 path = os.path.join(admin.home_collection, data_object)
                 admin.assert_icommand(['itouch', path])
-                cmds = self.construct_add_meta_op_for_target(path, 'data_object')
+                cmds = self.construct_add_metadata_op_for_target(path, 'data_object')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -328,26 +328,27 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 desired_val= json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
-                cmds = self.construct_remove_meta_op_for_target(path, 'data_object')
+                cmds = self.construct_remove_metadata_op_for_target(path, 'data_object')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
+                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
             
                 self.assertEqual(res, '')
 
             finally:
                 admin.run_icommand(['irm', path])
 
-    def test_meta_collection(self):
-        collection = 'collections'
+    def test_add_and_remove_metadata_on_collection__issue_118(self):
+        collection = 'metadata_test_collection'
         token = irods_rest.authenticate('rods', 'rods', 'native')
 
         with session.make_session_for_existing_admin() as admin:
             try:
                 path = os.path.join(admin.home_collection, collection)
                 admin.assert_icommand(['imkdir', path])
-                cmds = self.construct_add_meta_op_for_target(path, 'collection')
+                cmds = self.construct_add_metadata_op_for_target(path, 'collection')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -355,25 +356,27 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertEqual(res, '')
 
                 desired_attr = json.loads(cmds)['operations'][0]['attribute']
-                desired_val= json.loads(cmds)['operations'][0]['value']
+                desired_val = json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
-                cmds = self.construct_add_meta_op_for_target(path, 'collection')
+                cmds = self.construct_remove_metadata_op_for_target(path, 'collection')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
+                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+
                 self.assertEqual(res, '')
             finally:
                 admin.run_icommand(['irm', '-r', '-f', path])
 
-    def test_meta_user(self):
-        user = 'user_one'
+    def test_add_and_remove_metadata_on_user__issue_118(self):
+        user = 'metadata_test_user'
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
             try:
                 admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
-                cmds = self.construct_add_meta_op_for_target(user, 'user')
+                cmds = self.construct_add_metadata_op_for_target(user, 'user')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -384,22 +387,23 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 desired_val= json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
-                cmds = self.construct_remove_meta_op_for_target(user, 'user')
+                cmds = self.construct_remove_metadata_op_for_target(user, 'user')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
+                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
                 self.assertEqual(res, '')
             finally:
-                admin.run_icommand(['iadmin','rmuser', user])
+                admin.run_icommand(['iadmin', 'rmuser', user])
 
-    def test_meta_resource(self):
-        resource = 'resource'
+    def test_add_and_remove_metadata_on_resource__issue_118(self):
+        resource = 'metadata_test_resource'
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
             try:
                 lib.create_ufs_resource(resource, admin)
-                cmds = self.construct_add_meta_op_for_target(resource, resource)
+                cmds = self.construct_add_metadata_op_for_target(resource, resource)
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -410,47 +414,49 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 desired_val= json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
-                cmds = self.construct_remove_meta_op_for_target(resource, resource)
+                cmds = self.construct_remove_metadata_op_for_target(resource, 'resource')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
+                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
                 self.assertEqual(res, '')
             finally:
                 admin.run_icommand(['iadmin', 'rmresc', resource])
 
-    def construct_add_meta_op_for_target(self, _target, _entity_type):
-        ops = {
-            "entity_name" : _target,
-            "entity_type" : _entity_type,
-            "operations"  : [
-                {
-                    "operation" : "add",
-                    "attribute" : "{}attrib{}".format(_entity_type, _target[:-1]),
-                    "value" : "{}value{}".format(_entity_type, _target[:-1]),
-                    "units" : "{}units{}".format(_entity_type, _target[:-1])
-                }
-            ]
-        }
-        return json.dumps(ops)
+    def construct_add_metadata_op_for_target(self, _target, _entity_type):
+        return json.dumps(
+            {
+                "entity_name" : _target,
+                "entity_type" : _entity_type,
+                "operations"  : [
+                    {
+                        "operation" : "add",
+                        "attribute" : "{}_attrib_{}".format(_entity_type, _target[:-1]),
+                        "value" : "{}_value_{}".format(_entity_type, _target[:-1]),
+                        "units" : "{}_units_{}".format(_entity_type, _target[:-1])
+                    }
+                ]
+            }
+        )
 
     
-    def construct_remove_meta_op_for_target(self, _target, _entity_type):
-        ops = {
-            "entity_name" : _target,
-            "entity_type" : _entity_type,
-            "operations"  : [
-                {
-                    "operation" : "remove",
-                    "attribute" : "{}attrib{}s".format(_entity_type, _target[:-1]),
-                    "value" : "{}value{}s".format(_entity_type, _target[:-1]),
-                    "units" : "{}units{}s".format(_entity_type, _target[:-1])
-                }
-            ]
-        }
-
-        return json.dumps(ops)
-
+    def construct_remove_metadata_op_for_target(self, _target, _entity_type):
+        return json.dumps(
+            {
+                "entity_name" : _target,
+                "entity_type" : _entity_type,
+                "operations"  : [
+                    {
+                        "operation" : "remove",
+                        "attribute" : "{}_attrib_{}".format(_entity_type, _target[:-1]),
+                        "value" : "{}_value_{}".format(_entity_type, _target[:-1]),
+                        "units" : "{}_units_{}".format(_entity_type, _target[:-1])
+                    }
+                ]
+            }
+        )
+        
     def test_list(self):
         with session.make_session_for_existing_admin() as admin:
             try:
@@ -481,7 +487,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
 
             finally:
                 shutil.rmtree(dir_name)
-                admin.assert_icommand(['irm', '-f', '-r', dir_name])
+                admin.run_icommand(['irm', '-f', '-r', dir_name])
 
     def test_list_with_limit_and_offset(self):
         with session.make_session_for_existing_admin() as admin:
@@ -517,7 +523,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
 
             finally:
                 shutil.rmtree(dir_name)
-                admin.assert_icommand(['irm', '-f', '-r', dir_name])
+                admin.run_icommand(['irm', '-f', '-r', dir_name])
 
     def test_list_with_accoutrements(self):
         with session.make_session_for_existing_admin() as admin:
@@ -555,7 +561,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
 
             finally:
                 os.remove(file_name)
-                admin.assert_icommand(['irm', '-f', file_name])
+                admin.run_icommand(['irm', '-f', file_name])
 
     def test_query_with_limit_and_offset(self):
         with session.make_session_for_existing_admin() as admin:
@@ -598,7 +604,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
 
             finally:
                 shutil.rmtree(dir_name)
-                admin.assert_icommand(['irm', '-f', '-r', dir_name])
+                admin.run_icommand(['irm', '-f', '-r', dir_name])
 
     def test_query_with_case_sensitive_search_option_set_to_zero__issue_71(self):
         with session.make_session_for_existing_admin() as admin:
@@ -626,7 +632,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertEqual(arr[0], collection)
 
             finally:
-                admin.assert_icommand(['irmdir', collection])
+                admin.run_icommand(['irmdir', collection])
 
     def test_query_with_distinct_search_option_set_to_zero__issue_71(self):
         with session.make_session_for_existing_admin() as admin:
@@ -684,18 +690,12 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 pwd = pwd.rstrip()
                 logical_path = os.path.join(pwd, file_name)
 
-                print("test_stream_put_and_get pre_auth")
                 token = irods_rest.authenticate('rods', 'rods', 'native')
-                print("test_stream_put_and_get post_auth")
 
-                print("test_stream_put_and_get pre_put")
                 irods_rest.put(token, file_name, logical_path)
-                print("test_stream_put_and_get post_put")
                 admin.assert_icommand(['ils', '-l'], 'STDOUT_SINGLELINE', file_name)
 
-                print("test_stream_put_and_get pre_get")
                 irods_rest.get(token, downloaded_file_name, logical_path)
-                print("test_stream_put_and_get post_get")
 
                 sz  = os.path.getsize(file_name)
                 sz2 = os.path.getsize(downloaded_file_name)
@@ -707,7 +707,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             finally:
                 os.remove(file_name)
                 os.remove(downloaded_file_name)
-                admin.assert_icommand(['irm', '-f', file_name])
+                admin.run_icommand(['irm', '-f', file_name])
 
     def test_zone_report(self):
         with session.make_session_for_existing_admin() as admin:

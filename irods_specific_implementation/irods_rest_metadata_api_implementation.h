@@ -4,19 +4,12 @@
 #include "irods_rest_api_base.h"
 #include "constants.hpp"
 
-#include <irods/metadata.hpp>
 #include <irods/atomic_apply_metadata_operations.h>
 
 #include <pistache/router.h>
-#include <nlohmann/json.hpp>
-
-#include <fstream>
 
 namespace irods::rest
 {
-
-    namespace ixm = irods::experimental::metadata;
-
     // this is contractually tied directly to the api implementation
     const std::string service_name{"irods_rest_cpp_metadata_server"};
 
@@ -37,21 +30,17 @@ namespace irods::rest
                 auto _cmds = _request.body();
                 auto conn  = get_connection(_request.headers().getRaw("authorization").value());
 
-                std::ofstream output_file("/tmp/output.txt");
-                output_file << _cmds;
-
                 char * error_string{};
 
                 if ( const auto ec = rc_atomic_apply_metadata_operations(conn(), _cmds.c_str(), &error_string); ec < 0 ){
                     error("Received error [{}] from rc_atomic_apply_metadata_operations", ec);
-                    return make_error_response(ec, rodsErrorName(ec, nullptr));
+                    return make_error_response(ec, error_string);
                 }
 
                 return std::make_tuple(
                         Pistache::Http::Code::Ok,
                         ""
                 );
-
             }
             catch (const irods::exception& e) {
                 error("Caught exception - [error_code={}] {}", e.code(), e.what());

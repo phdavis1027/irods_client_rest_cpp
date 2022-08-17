@@ -4,14 +4,10 @@ from io import StringIO ## for Python 3
 import base64
 import tempfile
 
-from remote_pdb import RemotePdb
-
 try:
     from io import BytesIO
 except ImportError:
     from StringIO import StringIO as BytesIO
-
-# breaker = RemotePdb('0.0.0.0', 4444)
 
 def base_url():
     return "http://localhost/irods-rest/0.9.0/"
@@ -24,7 +20,7 @@ def authenticate(_user_name, _password, _auth_type):
     token = base64.b64encode(buff , None)
 
     c = pycurl.Curl()
-    c.setopt(pycurl.HTTPHEADER, ['Authorization: Native '+ token.decode()])
+    c.setopt(pycurl.HTTPHEADER, ['Authorization: Native '+token.decode()])
     c.setopt(c.CUSTOMREQUEST, 'POST')
     url = base_url()+'auth'
 
@@ -124,7 +120,6 @@ def meta(_token, _cmds):
     c.setopt(c.POSTFIELDSIZE, len(_cmds))
     c.setopt(c.READDATA, data_buf)
     c.setopt(c.UPLOAD, 1)
-    print("CANARY: ", data_buf.getvalue().decode('utf-8'))
 
 
     url = base_url()+"metadata"
@@ -224,14 +219,8 @@ def put(_token, _physical_path, _logical_path, _ticket_id=None):
     offset = 0
     file_size = 0
     read_size = 1024 * 1024 * 4
-    print('entered irods_rest.put')
     with open(_physical_path, 'r') as f:
-        print('opened physical path')
-        print('canary')
-        i = 0
         data_list = [item for item in iter(partial(f.read, read_size), b'')]
-        print(data_list)
-        print("Relevant length is: ", len(data_list))
         for data in iter(partial(f.read, read_size), b''):
             c = pycurl.Curl()
             c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
@@ -260,9 +249,7 @@ def put(_token, _physical_path, _logical_path, _ticket_id=None):
             c.close()
 
             body = body_buffer.getvalue()
-            print(i)
-            i += 1
-        print('exited loop')
+
     return body.decode('utf-8')
 
 def get(_token, _physical_path, _logical_path, _ticket_id=None):

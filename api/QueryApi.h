@@ -61,3 +61,4 @@ namespace io::swagger::server::api
 }
 
 #endif /* QueryApi_H_ */
+

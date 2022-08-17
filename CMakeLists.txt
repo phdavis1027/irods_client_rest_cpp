@@ -85,11 +85,11 @@ set(API_SERVER_NAMES
     PutConfiguration
     List
     LogicalPath
+    Metadata
     Query
     StreamGet
     StreamPut
     ZoneReport
-    Metadata
     )
 
 foreach(API_NAME ${API_SERVER_NAMES})
