@@ -124,6 +124,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             admin.assert_icommand(['irm', path])
 
 
+    @unittest.skip('Not relevant on this branch...')
     def test_logical_path_rename(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
@@ -154,6 +155,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.run_icommand(['irm', '-r', '-f', new_coll])
 
 
+    @unittest.skip('Not relevant on this branch...')
     def test_logical_path_delete(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
@@ -255,6 +257,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 token = irods_rest.authenticate('rods', 'rods', 'native')
 
                 json_string = irods_rest.access(token, logical_path, _seconds_until_expiration=-1)
+                print(json_string)
                 assert(json_string.find('error') > 0)
                 json_object = json.loads(json_string)
                 self.assertEqual(json_object['error_code'], -130000)
@@ -314,7 +317,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 path = os.path.join(admin.home_collection, data_object)
                 admin.assert_icommand(['itouch', path])
-                cmds = construct_meta_ops_for_target(path, 'data_object')
+                cmds = self.construct_meta_ops_for_target(path, 'data_object')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -331,7 +334,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 path = os.path.join(admin.home_collection, collection)
                 admin.assert_icommand(['imkdir', path])
-                cmds = construct_meta_ops_for_target(path, 'collection')
+                cmds = self.construct_meta_ops_for_target(path, 'collection')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -346,7 +349,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         with session.make_session_for_existing_admin() as admin:
             try:
                 admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
-                cmds = construct_meta_ops_for_target(user, user)
+                cmds = self.construct_meta_ops_for_target(user, user)
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -361,7 +364,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         with session.make_session_for_existing_admin() as admin:
             try:
                 lib.create_ufs_resource(resource, admin)
-                cmds = construct_meta_ops_for_target(resource, resource)
+                cmds = self.construct_meta_ops_for_target(resource, resource)
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -482,7 +485,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.assert_icommand(['imeta', 'set', '-d', logical_path, 'attr', 'val', 'unit'])
 
                 token  = irods_rest.authenticate('rods', 'rods', 'native')
-                result = irods_rest.list(token, logical_path, '1', '1', '1', 0, 0)
+                result = irods_rest.list(token, logical_path, 'true', 'true', 'true', 0, 0)
 
                 lst = json.loads(result)['_embedded'][0]
 

@@ -113,6 +113,19 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 
     return body
 
+def meta(_token, _cmds):
+    buffer = BytesIO()
+    c = pycurl.Curl()
+    c.setopt(pycurl.HTTPHEADER,['Authorization: '+  _token])
+    c.setopt(c.CUSTOMREQUEST, 'POST')
+    url = base_url()+f"meta?cmds={_cmds}"
+    c.setopt(c.URL, url)
+    c.setopt(c.WRITEDATA, buffer)
+    c.perform()
+    c.close()
+    body = buffer.getvalue()
+    return body.decode('utf-8')
+
 def access(_token, _logical_path, _ticket_type=None, _use_count=None,
            _write_file_count=None, _write_byte_count=None, _seconds_until_expiration=None,
            _users=None, _groups=None, _hosts=None):
