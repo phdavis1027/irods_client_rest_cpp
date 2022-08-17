@@ -344,12 +344,12 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 admin.run_icommand(['irmdir', path])
 
     def test_meta_user(self):
-        user = 'user'
+        user = 'user_one'
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
             try:
                 admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
-                cmds = self.construct_meta_ops_for_target(user, user)
+                cmds = self.construct_meta_ops_for_target(user, 'user')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -371,7 +371,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 )
                 self.assertEqual(res, '')
             finally:
-                admin.assert_icommand('iadmin', 'rmresc', resource)
+                admin.run_icommand('iadmin', 'rmresc', resource)
 
     def construct_meta_ops_for_target(self, _target, _entity_type):
         ops = {
@@ -385,12 +385,6 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                     "units" : "{}units{}".format(_entity_type, _target[:-1])
                 },
                 {
-                    "operation" : "set",
-                    "attribute" : "{}attrib{}s".format(_entity_type, _target[:-1]),
-                    "value" : "{}value{}s".format(_entity_type, _target[:-1]),
-                    "units" : "{}units{}s".format(_entity_type, _target[:-1])
-                },
-                {
                     "operation" : "remove",
                     "attribute" : "{}attrib{}s".format(_entity_type, _target[:-1]),
                     "value" : "{}value{}s".format(_entity_type, _target[:-1]),
@@ -398,8 +392,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 }
             ]
         }
-        return ops
-
+        return json.dumps(ops)
 
     def test_list(self):
         with session.make_session_for_existing_admin() as admin:

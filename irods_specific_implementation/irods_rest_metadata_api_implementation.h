@@ -10,6 +10,8 @@
 #include <pistache/router.h>
 #include <nlohmann/json.hpp>
 
+#include <fstream>
+
 namespace irods::rest
 {
 
@@ -32,8 +34,11 @@ namespace irods::rest
                    Pistache::Http::ResponseWriter& _response)
         {
             try {
-                auto _cmds = _request.query().get("cmds").get();
+                auto _cmds = _request.body();
                 auto conn  = get_connection(_request.headers().getRaw("authorization").value());
+
+                std::ofstream output_file("/tmp/output.txt");
+                output_file << _cmds;
 
                 char * error_string{};
 

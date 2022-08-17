@@ -116,11 +116,21 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 def meta(_token, _cmds):
     buffer = BytesIO()
     c = pycurl.Curl()
+    c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
     c.setopt(pycurl.HTTPHEADER,['Authorization: '+  _token])
     c.setopt(c.CUSTOMREQUEST, 'POST')
-    url = base_url()+f"meta?cmds={_cmds}"
+
+    data_buf = BytesIO(_cmds.encode('utf-8'))
+    c.setopt(c.POSTFIELDSIZE, len(_cmds))
+    c.setopt(c.READDATA, data_buf)
+    c.setopt(c.UPLOAD, 1)
+    print("CANARY: ", data_buf.getvalue().decode('utf-8'))
+
+
+    url = base_url()+"metadata"
     c.setopt(c.URL, url)
     c.setopt(c.WRITEDATA, buffer)
+    c.setopt(pycurl.HTTP_VERSION, pycurl.CURL_HTTP_VERSION_1_1)
     c.perform()
     c.close()
     body = buffer.getvalue()
