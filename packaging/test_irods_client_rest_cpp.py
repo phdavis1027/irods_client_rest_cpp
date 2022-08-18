@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import sys
 if sys.version_info >= (2, 7):
     import unittest
@@ -360,10 +358,13 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
                 cmds = self.construct_remove_metadata_op_for_target(path, 'collection')
+                print(lib.get_avus_attached_to_entity(admin, path, 'collection'))
+
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
+
                 self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
                 self.assertEqual(res, '')
@@ -432,9 +433,9 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 "operations"  : [
                     {
                         "operation" : "add",
-                        "attribute" : "{}_attrib_{}".format(_entity_type, _target[:-1]),
-                        "value" : "{}_value_{}".format(_entity_type, _target[:-1]),
-                        "units" : "{}_units_{}".format(_entity_type, _target[:-1])
+                        "attribute" : "{}_attrib_{}".format(_entity_type, _target),
+                        "value" : "{}_value_{}".format(_entity_type, _target),
+                        "units" : "{}_units_{}".format(_entity_type, _target)
                     }
                 ]
             }
@@ -449,9 +450,9 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 "operations"  : [
                     {
                         "operation" : "remove",
-                        "attribute" : "{}_attrib_{}".format(_entity_type, _target[:-1]),
-                        "value" : "{}_value_{}".format(_entity_type, _target[:-1]),
-                        "units" : "{}_units_{}".format(_entity_type, _target[:-1])
+                        "attribute" : "{}_attrib_{}".format(_entity_type, _target),
+                        "value" : "{}_value_{}".format(_entity_type, _target),
+                        "units" : "{}_units_{}".format(_entity_type, _target)
                     }
                 ]
             }
