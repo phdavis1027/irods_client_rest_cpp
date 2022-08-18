@@ -326,17 +326,18 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 desired_val= json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
+                self.assertTrue(entity_has_metadata(admin, path, 'data_object'))
+
                 cmds = self.construct_remove_metadata_op_for_target(path, 'data_object')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
-                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
-            
                 self.assertEqual(res, '')
 
+                self.assertFalse(entity_has_metadata(admin, path, 'data_object'))
             finally:
-                admin.run_icommand(['irm', path])
+                admin.run_icommand(['irm', '-f', path])
 
     def test_add_and_remove_metadata_on_collection__issue_118(self):
         collection = 'metadata_test_collection'
@@ -358,16 +359,14 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
 
                 cmds = self.construct_remove_metadata_op_for_target(path, 'collection')
-                print(lib.get_avus_attached_to_entity(admin, path, 'collection'))
 
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
-
-                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
-
                 self.assertEqual(res, '')
+
+                self.assertFalse(entity_has_metadata(admin, path, 'collection'))
             finally:
                 admin.run_icommand(['irm', '-r', '-f', path])
 
@@ -742,4 +741,17 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         irods_rest.admin(token, 'modify', 'user', self.user.username, 'password', old_password, None, None, None)
         self.user.assert_icommand(['iinit'], 'STDOUT', 'Enter your current iRODS password:', input=old_password + '\n')
         self.user.assert_icommand(['ils', '-ld'], 'STDOUT', [self.user.session_collection])
+
+def entity_has_metadata(session, _entity, _entity_type):
+    entity_to_query_map = {
+        'collection' : '"select META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS where COLL_NAME = \'{}\'"',
+        'data_object': f'"select META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS where COLL_NAME = \'{os.path.dirname(_entity)}\' and DATA_NAME = \'{os.path.basename(_entity)}\'"',
+        'user'       : '"select META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS where USER_NAME = \'{}\'"',
+        'resource'   : '"select META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE, META_RESC_ATTR_UNITS where RESC_NAME = \'{}\'"'
+    }
+    query = entity_to_query_map[_entity_type].format(_entity)
+    query_output = session.run_icommand(['iquest', '%s:%s:%s', query])[0].split('\n')
+    if "CAT_NO_ROWS_FOUND" in query_output[0]:
+        return False
+    return True # eventually should walk the actual avus to check for the target
 
