@@ -72,7 +72,6 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 
     return body.decode('utf-8')
 
-<<<<<<< HEAD
 def logical_path_rename(_token, _src, _dest):
     buffer = StringIO()
     c = pycurl.Curl()
