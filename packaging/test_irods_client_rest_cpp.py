@@ -386,14 +386,16 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 desired_attr = json.loads(cmds)['operations'][0]['attribute']
                 desired_val= json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+                self.assertTrue(entity_has_metadata(admin, user, 'user'))
 
                 cmds = self.construct_remove_metadata_op_for_target(user, 'user')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
-                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
                 self.assertEqual(res, '')
+               
+                self.assertFalse(entity_has_metadata(admin, user, 'user'))
             finally:
                 admin.run_icommand(['iadmin', 'rmuser', user])
 
@@ -403,7 +405,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
         with session.make_session_for_existing_admin() as admin:
             try:
                 lib.create_ufs_resource(resource, admin)
-                cmds = self.construct_add_metadata_op_for_target(resource, resource)
+                cmds = self.construct_add_metadata_op_for_target(resource, 'resource')
                 res = irods_rest.meta(
                     token,
                     cmds
@@ -413,14 +415,16 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 desired_attr = json.loads(cmds)['operations'][0]['attribute']
                 desired_val= json.loads(cmds)['operations'][0]['value']
                 self.assertTrue(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
+                self.assertTrue(entity_has_metadata(admin, resource, 'resource'))
 
                 cmds = self.construct_remove_metadata_op_for_target(resource, 'resource')
                 res = irods_rest.meta(
                     token,
                     cmds
                 )
-                self.assertFalse(lib.metadata_attr_with_value_exists(admin, desired_attr, desired_val))
                 self.assertEqual(res, '')
+
+                self.assertFalse(entity_has_metadata(admin, resource, 'resource'))
             finally:
                 admin.run_icommand(['iadmin', 'rmresc', resource])
 
