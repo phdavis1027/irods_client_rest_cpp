@@ -72,6 +72,7 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 
     return body.decode('utf-8')
 
+<<<<<<< HEAD
 def logical_path_rename(_token, _src, _dest):
     buffer = StringIO()
     c = pycurl.Curl()
@@ -109,7 +110,7 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 
     return body
 
-def meta(_token, _cmds):
+def metadata(_token, _cmds):
     buffer = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])
@@ -255,9 +256,7 @@ def put(_token, _physical_path, _logical_path, _ticket_id=None):
 def get(_token, _physical_path, _logical_path, _ticket_id=None):
     offset = 0
     read_size = 1024 * 1024 * 4
-    print('entered irods_rest.get')
     with open(_physical_path, 'w') as f:
-        print('opened physical path')
         while True:
             c = pycurl.Curl()
             c.setopt(pycurl.HTTPHEADER,['Accept: application/json'])

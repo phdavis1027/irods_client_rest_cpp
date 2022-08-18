@@ -10,7 +10,6 @@ from . import session
 
 import json
 from . import irods_rest
-from remote_pdb import RemotePdb
 
 class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unittest.TestCase):
 
@@ -255,7 +254,6 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 token = irods_rest.authenticate('rods', 'rods', 'native')
 
                 json_string = irods_rest.access(token, logical_path, _seconds_until_expiration=-1)
-                print(json_string)
                 assert(json_string.find('error') > 0)
                 json_object = json.loads(json_string)
                 self.assertEqual(json_object['error_code'], -130000)
@@ -316,7 +314,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 path = os.path.join(admin.home_collection, data_object)
                 admin.assert_icommand(['itouch', path])
                 cmds = self.construct_add_metadata_op_for_target(path, 'data_object')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -329,7 +327,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertTrue(entity_has_metadata(admin, path, 'data_object'))
 
                 cmds = self.construct_remove_metadata_op_for_target(path, 'data_object')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -348,7 +346,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 path = os.path.join(admin.home_collection, collection)
                 admin.assert_icommand(['imkdir', path])
                 cmds = self.construct_add_metadata_op_for_target(path, 'collection')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -360,7 +358,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
 
                 cmds = self.construct_remove_metadata_op_for_target(path, 'collection')
 
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -377,7 +375,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 admin.assert_icommand(['iadmin', 'mkuser', user, 'rodsuser'])
                 cmds = self.construct_add_metadata_op_for_target(user, 'user')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -389,7 +387,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertTrue(entity_has_metadata(admin, user, 'user'))
 
                 cmds = self.construct_remove_metadata_op_for_target(user, 'user')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -406,7 +404,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             try:
                 lib.create_ufs_resource(resource, admin)
                 cmds = self.construct_add_metadata_op_for_target(resource, 'resource')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
@@ -418,7 +416,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 self.assertTrue(entity_has_metadata(admin, resource, 'resource'))
 
                 cmds = self.construct_remove_metadata_op_for_target(resource, 'resource')
-                res = irods_rest.meta(
+                res = irods_rest.metadata(
                     token,
                     cmds
                 )
