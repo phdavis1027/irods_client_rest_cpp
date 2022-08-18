@@ -72,10 +72,10 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 
     return body.decode('utf-8')
 
-def logical_path_rename(_token, _src, _dest):
-    buffer = StringIO()
+def _logical_path_rename(_token, _src, _dest):
+    buffer = BytesIO()
     c = pycurl.Curl()
-    c.setopt(pycurl.HTTPHEADER,['Authorization: Native '+token])
+    c.setopt(pycurl.HTTPHEADER,['Authorization: '+_token])
     c.setopt(c.CUSTOMREQUEST, 'POST')
     url = base_url()+'logicalpath/rename?src={0}&dst={1}'.format(_src, _dst)
 
@@ -86,13 +86,13 @@ def logical_path_rename(_token, _src, _dest):
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
-def logical_path_delete(_token, _logical_path, _no_trash = None,
+def _logical_path_delete(_token, _logical_path, _no_trash = None,
                         _recursive = None, _unregister = None):
-    buffer = StringIO()
+    buffer = BytesIO()
     c = pycurl.Curl()
-    c.setopt(pycurl.HTTPHEADER,['Authorization: Native ' + _token])
+    c.setopt(pycurl.HTTPHEADER,['Authorization: ' + _token])
     c.setopt(c.CUSTOMREQUEST, 'DELETE')
 
     url = base_url()+'logicalpath?logical-path={0}'.format(_logical_path)
@@ -107,7 +107,7 @@ def logical_path_delete(_token, _logical_path, _no_trash = None,
 
     body = buffer.getvalue()
 
-    return body
+    return body.decode('utf-8')
 
 def metadata(_token, _cmds):
     buffer = BytesIO()

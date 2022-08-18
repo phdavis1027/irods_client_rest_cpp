@@ -66,7 +66,8 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             finally:
                 os.remove(file_name)
                 admin.assert_icommand(['irm', '-f', file_name])
-    def test_logical_path_rename(self):
+                
+    def _test_logical_path_rename(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
             # test on a data object
@@ -96,7 +97,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             admin.assert_icommand(['irm', '-r', '-f', path])
 
 
-    def test_logical_path_delete(self):
+    def _test_logical_path_delete(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
             # test on data object
@@ -120,8 +121,7 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
             self.assertEqual(res, "")
             admin.assert_icommand(['irm', path])
 
-
-    @unittest.skip('Not relevant on this branch...')
+    @unittest.skip('Fix me #129')
     def test_logical_path_rename(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
@@ -149,10 +149,11 @@ class TestClientRest(session.make_sessions_mixin([], [('alice', 'apass')]), unit
                 )
                 self.assertEqual(res, "")
             finally:
+                admin.run_icommand(['irm', '-r', '-f', coll])
                 admin.run_icommand(['irm', '-r', '-f', new_coll])
 
 
-    @unittest.skip('Not relevant on this branch...')
+    @unittest.skip('Fix me #129')
     def test_logical_path_delete(self):
         token = irods_rest.authenticate('rods', 'rods', 'native')
         with session.make_session_for_existing_admin() as admin:
